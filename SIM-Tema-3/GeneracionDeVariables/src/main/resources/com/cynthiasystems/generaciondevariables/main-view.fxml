@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox prefHeight="420.0" prefWidth="529.0" spacing="10" style="-fx-padding: 15;" xmlns="http://javafx.com/javafx/23.0.2"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cynthiasystems.generaciondevariables.MainController">
+
+    <children>
+        <Label style="-fx-font-size: 18px; -fx-font-weight: bold;"
+               text="Simulación: Generación de Variables Aleatorias"/>
+
+        <!-- Contenedor por pestañas para cada sección del temario -->
+        <TabPane fx:id="tabPaneTemas" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+            <tabs>
+                <!-- 3.2 Variables Aleatorias Discretas -->
+                <Tab text="Discretas">
+                    <content>
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <Label style="-fx-font-weight: bold;"
+                                   text="Generación de Variables Aleatorias Discretas (Bernoulli, Binomial, Poisson)"/>
+                            <Button onAction="#handleDiscretas" text="Ejecutar Simulación Discreta"/>
+                            <TextArea fx:id="txtAreaDiscretas" prefHeight="390.0" prefWidth="749.0"
+                                      promptText="Resultados aparecerán aquí..." VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- 3.3 Variables Aleatorias Continuas -->
+                <Tab text="Continuas">
+                    <content>
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <Label style="-fx-font-weight: bold;"
+                                   text="Generación de Variables Aleatorias Continuas (Uniforme, Exponencial, Normal)"/>
+                            <Button onAction="#handleContinuas" text="Ejecutar Simulación Continua"/>
+                            <TextArea fx:id="txtAreaContinuas" promptText="Resultados aparecerán aquí..."
+                                      VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- 3.4 Métodos para generar variables aleatorias -->
+                <Tab text="Métodos de Generación">
+                    <content>
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <Label style="-fx-font-weight: bold;"
+                                   text="Métodos: Transformada Inversa, Convolución y Composición"/>
+                            <HBox spacing="10">
+                                <Button onAction="#handleTransformada" text="Transformada Inversa (3.4.1)"/>
+                                <Button onAction="#handleConvolucion" text="Convolución (3.4.2)"/>
+                                <Button onAction="#handlecomposicion" text="Composición (3.4.3)"/>
+                            </HBox>
+                            <TextArea fx:id="txtAreaMetodos" promptText="Resultados de los métodos..."
+                                      VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- 3.5 Procedimientos Especiales -->
+                <Tab text="Proc. Especiales">
+                    <content>
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <Label style="-fx-font-weight: bold;" text="Procedimientos Especiales de Generación"/>
+                            <Button onAction="#handleProcedimientos" text="Ejecutar Procedimiento Especial"/>
+                            <TextArea fx:id="txtAreaEspeciales" promptText="Resultados..." VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- 3.6 Pruebas Estadísticas -->
+                <Tab text="Pruebas Estadísticas">
+                    <content>
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <Label style="-fx-font-weight: bold;"
+                                   text="Pruebas Estadísticas (Kolmogorov-Smirnov, Chi-Cuadrada, Frecuencias)"/>
+                            <Button onAction="#handlePruebas" text="Ejecutar Pruebas"/>
+                            <TextArea fx:id="txtAreaPruebas" promptText="Resultados de las pruebas estadísticas..."
+                                      VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </children>
+</VBox>
