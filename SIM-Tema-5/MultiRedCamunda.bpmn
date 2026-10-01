@@ -1,0 +1,1413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Multired" targetNamespace="https://multired.example/bpmn" exporter="Camunda Modeler" exporterVersion="5.38.0">
+  <collaboration id="Collaboration_Multired" name="Proceso interbancario Multired">
+    <participant id="Participant_ATM" name="ATM Multired" processRef="Process_ATM" />
+    <participant id="Participant_Issuer" name="Banco emisor / Core bancario" processRef="Process_Issuer" />
+    <participant id="Participant_Ops" name="Operaciones y conciliación" processRef="Process_Ops" />
+    <messageFlow id="MF_Request" name="Solicitud interbancaria" sourceRef="A_SendRequest" targetRef="I_ReceiveRequest" messageRef="Msg_Request" />
+    <messageFlow id="MF_Response" name="Respuesta de autorización" sourceRef="I_SendApproval" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+    <messageFlow id="MF_PINError" name="Respuesta NIP incorrecto" sourceRef="I_ReplyPINError" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+    <messageFlow id="MF_FundsError" name="Respuesta fondos insuficientes" sourceRef="I_ReplyNoFunds" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+    <messageFlow id="MF_LimitError" name="Respuesta límite excedido" sourceRef="I_ReplyLimit" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+    <messageFlow id="MF_AccountError" name="Respuesta cuenta no válida" sourceRef="I_ReplyAccountError" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+    <messageFlow id="MF_FormatError" name="Respuesta solicitud inválida" sourceRef="I_ReplyFormatError" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+    <messageFlow id="MF_SystemError" name="Respuesta error técnico" sourceRef="I_ReplySystemError" targetRef="A_WaitResponse" messageRef="Msg_Response" />
+  </collaboration>
+  <process id="Process_ATM" name="ATM Multired – Atención de transacción" isExecutable="false">
+    <laneSet id="Process_ATM_LaneSet">
+      <lane id="Lane_ATM" name="Terminal ATM">
+        <flowNodeRef>A_Start</flowNodeRef>
+        <flowNodeRef>A_ReadCard</flowNodeRef>
+        <flowNodeRef>A_EncryptPIN</flowNodeRef>
+        <flowNodeRef>A_CheckCard</flowNodeRef>
+        <flowNodeRef>A_CardOK</flowNodeRef>
+        <flowNodeRef>A_SelectOperation</flowNodeRef>
+        <flowNodeRef>A_OperationType</flowNodeRef>
+        <flowNodeRef>A_EnterAmount</flowNodeRef>
+        <flowNodeRef>A_CheckAmount</flowNodeRef>
+        <flowNodeRef>A_AmountOK</flowNodeRef>
+        <flowNodeRef>A_ShowTimeout</flowNodeRef>
+        <flowNodeRef>A_EndTimeout</flowNodeRef>
+        <flowNodeRef>A_Approved</flowNodeRef>
+        <flowNodeRef>A_ShowPINError</flowNodeRef>
+        <flowNodeRef>A_PINAttempts</flowNodeRef>
+        <flowNodeRef>A_BlockCard</flowNodeRef>
+        <flowNodeRef>A_EndBlocked</flowNodeRef>
+        <flowNodeRef>A_ShowNoFunds</flowNodeRef>
+        <flowNodeRef>A_ShowLimit</flowNodeRef>
+        <flowNodeRef>A_ShowIssuerError</flowNodeRef>
+        <flowNodeRef>A_DispenseCash</flowNodeRef>
+        <flowNodeRef>A_ConfirmDispense</flowNodeRef>
+        <flowNodeRef>A_CalcCommission</flowNodeRef>
+        <flowNodeRef>A_ShowBalance</flowNodeRef>
+        <flowNodeRef>A_PrintReceipt</flowNodeRef>
+        <flowNodeRef>A_LogTransaction</flowNodeRef>
+        <flowNodeRef>A_ReturnCard</flowNodeRef>
+        <flowNodeRef>A_EndSuccess</flowNodeRef>
+        <flowNodeRef>A_EndBalance</flowNodeRef>
+        <flowNodeRef>A_Cancel</flowNodeRef>
+        <flowNodeRef>A_EndCancel</flowNodeRef>
+        <flowNodeRef>A_WaitResponse</flowNodeRef>
+        <flowNodeRef>A_Timeout</flowNodeRef>
+        <flowNodeRef>A_ApprovedOp</flowNodeRef>
+        <flowNodeRef>A_PrintBalanceReceipt</flowNodeRef>
+        <flowNodeRef>A_LogBalance</flowNodeRef>
+        <flowNodeRef>A_ReturnCardBalance</flowNodeRef>
+        <flowNodeRef>A_LogDeclined</flowNodeRef>
+        <flowNodeRef>A_ReturnCardDeclined</flowNodeRef>
+        <flowNodeRef>A_EndDeclined</flowNodeRef>
+        <flowNodeRef>A_EjectCard</flowNodeRef>
+        <flowNodeRef>A_EndCardError</flowNodeRef>
+        <flowNodeRef>A_AmountError</flowNodeRef>
+        <flowNodeRef>A_BuildRequest</flowNodeRef>
+        <flowNodeRef>A_SendRequest</flowNodeRef>
+        <flowNodeRef>A_ResponseRace</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="A_Start" name="Cliente inserta tarjeta" />
+    <task id="A_ReadCard" name="Leer tarjeta y validar chip" />
+    <task id="A_EncryptPIN" name="Capturar PIN y cifrarlo" />
+    <task id="A_CheckCard" name="Validar formato y estado de tarjeta" />
+    <exclusiveGateway id="A_CardOK" name="¿Tarjeta válida?" />
+    <task id="A_SelectOperation" name="Mostrar menú y seleccionar operación" />
+    <exclusiveGateway id="A_OperationType" name="¿Tipo de operación?" />
+    <task id="A_EnterAmount" name="Solicitar importe de retiro" />
+    <task id="A_CheckAmount" name="Validar importe, múltiplos y límites locales" />
+    <exclusiveGateway id="A_AmountOK" name="¿Importe válido?" />
+    <task id="A_ShowTimeout" name="Informar timeout y registrar error de comunicación" />
+    <endEvent id="A_EndTimeout" name="Operación abortada por timeout" />
+    <exclusiveGateway id="A_Approved" name="¿Transacción aprobada?" />
+    <task id="A_ShowPINError" name="Mostrar NIP incorrecto; permitir reintento" />
+    <exclusiveGateway id="A_PINAttempts" name="¿Quedan intentos de PIN?" />
+    <task id="A_BlockCard" name="Bloquear tarjeta por intentos excedidos" />
+    <endEvent id="A_EndBlocked" name="Operación finalizada: tarjeta bloqueada" />
+    <task id="A_ShowNoFunds" name="Informar fondos insuficientes" />
+    <task id="A_ShowLimit" name="Informar límite diario excedido" />
+    <task id="A_ShowIssuerError" name="Informar cuenta no válida o error del emisor" />
+    <task id="A_DispenseCash" name="Dispensar efectivo" />
+    <task id="A_ConfirmDispense" name="Confirmar dispensación al sistema" />
+    <task id="A_CalcCommission" name="Calcular comisión interbancaria" />
+    <task id="A_ShowBalance" name="Mostrar saldo disponible al cliente" />
+    <task id="A_PrintReceipt" name="Ofrecer/imprimir comprobante" />
+    <task id="A_LogTransaction" name="Registrar resultado y datos de auditoría" />
+    <task id="A_ReturnCard" name="Devolver tarjeta" />
+    <endEvent id="A_EndSuccess" name="Retiro exitoso" />
+    <endEvent id="A_EndBalance" name="Consulta de saldo exitosa" />
+    <task id="A_Cancel" name="Cancelar operación y devolver tarjeta" />
+    <endEvent id="A_EndCancel" name="Operación cancelada por usuario" />
+    <intermediateCatchEvent id="A_WaitResponse" name="Recibir respuesta del banco emisor">
+      <messageEventDefinition messageRef="Msg_Response" />
+    </intermediateCatchEvent>
+    <intermediateCatchEvent id="A_Timeout" name="Timeout de respuesta">
+      <timerEventDefinition>
+        <timeDuration>PT30S</timeDuration>
+      </timerEventDefinition>
+    </intermediateCatchEvent>
+    <exclusiveGateway id="A_ApprovedOp" name="¿Operación aprobada y tipo?" />
+    <task id="A_PrintBalanceReceipt" name="Ofrecer comprobante de consulta" />
+    <task id="A_LogBalance" name="Registrar consulta de saldo" />
+    <task id="A_ReturnCardBalance" name="Devolver tarjeta al cliente" />
+    <task id="A_LogDeclined" name="Registrar rechazo de transacción" />
+    <task id="A_ReturnCardDeclined" name="Devolver tarjeta tras rechazo" />
+    <endEvent id="A_EndDeclined" name="Retiro rechazado" />
+    <task id="A_EjectCard" name="Informar tarjeta inválida y devolver tarjeta" />
+    <endEvent id="A_EndCardError" name="Operación cancelada: tarjeta inválida" />
+    <task id="A_AmountError" name="Mostrar importe no válido y permitir corregir" />
+    <task id="A_BuildRequest" name="Preparar solicitud interbancaria (retiro o consulta)" />
+    <sendTask id="A_SendRequest" name="Enviar solicitud interbancaria al banco emisor" messageRef="Msg_Request" />
+    <eventBasedGateway id="A_ResponseRace" name="¿Respuesta o timeout?" />
+    <sequenceFlow id="A_F1" sourceRef="A_Start" targetRef="A_ReadCard" />
+    <sequenceFlow id="A_F2" sourceRef="A_ReadCard" targetRef="A_EncryptPIN" />
+    <sequenceFlow id="A_F25" name="Sí, reintentar" sourceRef="A_PINAttempts" targetRef="A_EncryptPIN" />
+    <sequenceFlow id="A_F3" sourceRef="A_EncryptPIN" targetRef="A_CheckCard" />
+    <sequenceFlow id="A_F4" sourceRef="A_CheckCard" targetRef="A_CardOK" />
+    <sequenceFlow id="A_F5" name="Sí" sourceRef="A_CardOK" targetRef="A_SelectOperation" />
+    <sequenceFlow id="A_F6" name="No" sourceRef="A_CardOK" targetRef="A_EjectCard" />
+    <sequenceFlow id="A_F8" sourceRef="A_SelectOperation" targetRef="A_OperationType" />
+    <sequenceFlow id="A_F9" name="Retiro" sourceRef="A_OperationType" targetRef="A_EnterAmount" />
+    <sequenceFlow id="A_F39" name="Consulta de saldo" sourceRef="A_OperationType" targetRef="A_BuildRequest" />
+    <sequenceFlow id="A_F41" name="Cancelar" sourceRef="A_OperationType" targetRef="A_Cancel" />
+    <sequenceFlow id="A_F14" name="Corregir importe" sourceRef="A_AmountError" targetRef="A_EnterAmount" />
+    <sequenceFlow id="A_F10" sourceRef="A_EnterAmount" targetRef="A_CheckAmount" />
+    <sequenceFlow id="A_F11" sourceRef="A_CheckAmount" targetRef="A_AmountOK" />
+    <sequenceFlow id="A_F12" name="Sí" sourceRef="A_AmountOK" targetRef="A_BuildRequest" />
+    <sequenceFlow id="A_F13" name="No" sourceRef="A_AmountOK" targetRef="A_AmountError" />
+    <sequenceFlow id="A_F20" sourceRef="A_Timeout" targetRef="A_ShowTimeout" />
+    <sequenceFlow id="A_F21" sourceRef="A_ShowTimeout" targetRef="A_EndTimeout" />
+    <sequenceFlow id="A_F19" sourceRef="A_WaitResponse" targetRef="A_Approved" />
+    <sequenceFlow id="A_F22" name="Aprobada" sourceRef="A_Approved" targetRef="A_ApprovedOp" />
+    <sequenceFlow id="A_F23" name="NIP incorrecto" sourceRef="A_Approved" targetRef="A_ShowPINError" />
+    <sequenceFlow id="A_F28" name="Fondos insuficientes" sourceRef="A_Approved" targetRef="A_ShowNoFunds" />
+    <sequenceFlow id="A_F29" name="Límite excedido" sourceRef="A_Approved" targetRef="A_ShowLimit" />
+    <sequenceFlow id="A_F30" name="Cuenta no válida / error técnico" sourceRef="A_Approved" targetRef="A_ShowIssuerError" />
+    <sequenceFlow id="A_F24" sourceRef="A_ShowPINError" targetRef="A_PINAttempts" />
+    <sequenceFlow id="A_F26" name="No quedan intentos" sourceRef="A_PINAttempts" targetRef="A_BlockCard" />
+    <sequenceFlow id="A_F27" sourceRef="A_BlockCard" targetRef="A_EndBlocked" />
+    <sequenceFlow id="A_F31" sourceRef="A_ShowNoFunds" targetRef="A_LogDeclined" />
+    <sequenceFlow id="A_F32" sourceRef="A_ShowLimit" targetRef="A_LogDeclined" />
+    <sequenceFlow id="A_F33" sourceRef="A_ShowIssuerError" targetRef="A_LogDeclined" />
+    <sequenceFlow id="A_F36" name="Retiro" sourceRef="A_ApprovedOp" targetRef="A_DispenseCash" />
+    <sequenceFlow id="A_F37" sourceRef="A_DispenseCash" targetRef="A_ConfirmDispense" />
+    <sequenceFlow id="A_F38" sourceRef="A_ConfirmDispense" targetRef="A_CalcCommission" />
+    <sequenceFlow id="A_F43" sourceRef="A_CalcCommission" targetRef="A_PrintReceipt" />
+    <sequenceFlow id="A_F47" name="Consulta de saldo" sourceRef="A_ApprovedOp" targetRef="A_ShowBalance" />
+    <sequenceFlow id="A_F48" sourceRef="A_ShowBalance" targetRef="A_PrintBalanceReceipt" />
+    <sequenceFlow id="A_F44" sourceRef="A_PrintReceipt" targetRef="A_LogTransaction" />
+    <sequenceFlow id="A_F45" sourceRef="A_LogTransaction" targetRef="A_ReturnCard" />
+    <sequenceFlow id="A_F46" sourceRef="A_ReturnCard" targetRef="A_EndSuccess" />
+    <sequenceFlow id="A_F51" sourceRef="A_ReturnCardBalance" targetRef="A_EndBalance" />
+    <sequenceFlow id="A_F42" sourceRef="A_Cancel" targetRef="A_EndCancel" />
+    <sequenceFlow id="A_F17" name="Respuesta recibida" sourceRef="A_ResponseRace" targetRef="A_WaitResponse" />
+    <sequenceFlow id="A_F18" name="30 segundos sin respuesta" sourceRef="A_ResponseRace" targetRef="A_Timeout" />
+    <sequenceFlow id="A_F49" sourceRef="A_PrintBalanceReceipt" targetRef="A_LogBalance" />
+    <sequenceFlow id="A_F50" sourceRef="A_LogBalance" targetRef="A_ReturnCardBalance" />
+    <sequenceFlow id="A_F34" sourceRef="A_LogDeclined" targetRef="A_ReturnCardDeclined" />
+    <sequenceFlow id="A_F35" sourceRef="A_ReturnCardDeclined" targetRef="A_EndDeclined" />
+    <sequenceFlow id="A_F7" sourceRef="A_EjectCard" targetRef="A_EndCardError" />
+    <sequenceFlow id="A_F15" sourceRef="A_BuildRequest" targetRef="A_SendRequest" />
+    <sequenceFlow id="A_F16" sourceRef="A_SendRequest" targetRef="A_ResponseRace" />
+  </process>
+  <process id="Process_Issuer" name="Banco emisor – Core bancario" isExecutable="true">
+    <laneSet id="Process_Issuer_LaneSet">
+      <lane id="Lane_Issuer" name="Autorización bancaria">
+        <flowNodeRef>I_Start</flowNodeRef>
+        <flowNodeRef>I_ReceiveRequest</flowNodeRef>
+        <flowNodeRef>I_ValidateMessage</flowNodeRef>
+        <flowNodeRef>I_MessageOK</flowNodeRef>
+        <flowNodeRef>I_ReplyFormatError</flowNodeRef>
+        <flowNodeRef>I_EndFormatError</flowNodeRef>
+        <flowNodeRef>I_ValidatePIN</flowNodeRef>
+        <flowNodeRef>I_PINOK</flowNodeRef>
+        <flowNodeRef>I_ReplyPINError</flowNodeRef>
+        <flowNodeRef>I_EndPIN</flowNodeRef>
+        <flowNodeRef>I_ValidateAccount</flowNodeRef>
+        <flowNodeRef>I_AccountOK</flowNodeRef>
+        <flowNodeRef>I_ReplyAccountError</flowNodeRef>
+        <flowNodeRef>I_EndAccount</flowNodeRef>
+        <flowNodeRef>I_CheckDailyLimit</flowNodeRef>
+        <flowNodeRef>I_LimitOK</flowNodeRef>
+        <flowNodeRef>I_ReplyLimit</flowNodeRef>
+        <flowNodeRef>I_EndLimit</flowNodeRef>
+        <flowNodeRef>I_CheckFunds</flowNodeRef>
+        <flowNodeRef>I_FundsOK</flowNodeRef>
+        <flowNodeRef>I_ReplyNoFunds</flowNodeRef>
+        <flowNodeRef>I_EndFunds</flowNodeRef>
+        <flowNodeRef>I_ReserveFunds</flowNodeRef>
+        <flowNodeRef>I_CalcIssuerFee</flowNodeRef>
+        <flowNodeRef>I_Audit</flowNodeRef>
+        <flowNodeRef>I_SendApproval</flowNodeRef>
+        <flowNodeRef>I_EndApproved</flowNodeRef>
+        <flowNodeRef>I_ReleaseReservation</flowNodeRef>
+        <flowNodeRef>I_ReplySystemError</flowNodeRef>
+        <flowNodeRef>I_EndSystemError</flowNodeRef>
+        <flowNodeRef>I_ReserveOK</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="I_Start" name="Solicitud de retiro recibida">
+      <messageEventDefinition id="I_StartMsgDef" messageRef="Msg_Request" />
+    </startEvent>
+    <receiveTask id="I_ReceiveRequest" name="Recibir solicitud y correlacionar transacción" messageRef="Msg_Request" />
+    <task id="I_ValidateMessage" name="Validar formato, identificador y datos obligatorios" />
+    <exclusiveGateway id="I_MessageOK" name="¿Solicitud íntegra?" />
+    <sendTask id="I_ReplyFormatError" name="Responder solicitud inválida" messageRef="Msg_Response" />
+    <endEvent id="I_EndFormatError" name="Solicitud rechazada" />
+    <task id="I_ValidatePIN" name="Verificar NIP cifrado" />
+    <exclusiveGateway id="I_PINOK" name="¿NIP correcto?" />
+    <sendTask id="I_ReplyPINError" name="Responder NIP incorrecto" messageRef="Msg_Response" />
+    <endEvent id="I_EndPIN" name="NIP incorrecto" />
+    <task id="I_ValidateAccount" name="Validar cuenta, tarjeta, estado y vigencia" />
+    <exclusiveGateway id="I_AccountOK" name="¿Cuenta activa?" />
+    <sendTask id="I_ReplyAccountError" name="Responder cuenta o tarjeta bloqueada" messageRef="Msg_Response" />
+    <endEvent id="I_EndAccount" name="Cuenta no válida" />
+    <task id="I_CheckDailyLimit" name="Consultar límites diarios y reglas antifraude" />
+    <exclusiveGateway id="I_LimitOK" name="¿Dentro del límite?" />
+    <sendTask id="I_ReplyLimit" name="Responder límite excedido" messageRef="Msg_Response" />
+    <endEvent id="I_EndLimit" name="Límite excedido" />
+    <task id="I_CheckFunds" name="Consultar saldo y fondos disponibles" />
+    <exclusiveGateway id="I_FundsOK" name="¿Fondos suficientes?" />
+    <sendTask id="I_ReplyNoFunds" name="Responder fondos insuficientes" messageRef="Msg_Response" />
+    <endEvent id="I_EndFunds" name="Fondos insuficientes" />
+    <task id="I_ReserveFunds" name="Reservar/debitar importe de forma transaccional" />
+    <task id="I_CalcIssuerFee" name="Calcular comisión y registrar cargos" />
+    <task id="I_Audit" name="Registrar auditoría y actualizar historial" />
+    <sendTask id="I_SendApproval" name="Enviar aprobación y datos de saldo/comisión" messageRef="Msg_Response" />
+    <endEvent id="I_EndApproved" name="Transacción autorizada" />
+    <task id="I_ReleaseReservation" name="Liberar reserva si falla la operación" />
+    <sendTask id="I_ReplySystemError" name="Responder error interno o indisponibilidad" messageRef="Msg_Response" />
+    <endEvent id="I_EndSystemError" name="Error técnico informado" />
+    <exclusiveGateway id="I_ReserveOK" name="¿Reserva de fondos confirmada?" />
+    <sequenceFlow id="I_F1" sourceRef="I_Start" targetRef="I_ReceiveRequest" />
+    <sequenceFlow id="I_F2" sourceRef="I_ReceiveRequest" targetRef="I_ValidateMessage" />
+    <sequenceFlow id="I_F3" sourceRef="I_ValidateMessage" targetRef="I_MessageOK" />
+    <sequenceFlow id="I_F4" name="Sí" sourceRef="I_MessageOK" targetRef="I_ValidatePIN" />
+    <sequenceFlow id="I_F5" name="No" sourceRef="I_MessageOK" targetRef="I_ReplyFormatError" />
+    <sequenceFlow id="I_F6" sourceRef="I_ReplyFormatError" targetRef="I_EndFormatError" />
+    <sequenceFlow id="I_F7" sourceRef="I_ValidatePIN" targetRef="I_PINOK" />
+    <sequenceFlow id="I_F8" name="Sí" sourceRef="I_PINOK" targetRef="I_ValidateAccount" />
+    <sequenceFlow id="I_F9" name="No" sourceRef="I_PINOK" targetRef="I_ReplyPINError" />
+    <sequenceFlow id="I_F10" sourceRef="I_ReplyPINError" targetRef="I_EndPIN" />
+    <sequenceFlow id="I_F11" sourceRef="I_ValidateAccount" targetRef="I_AccountOK" />
+    <sequenceFlow id="I_F12" name="Sí" sourceRef="I_AccountOK" targetRef="I_CheckDailyLimit" />
+    <sequenceFlow id="I_F13" name="No" sourceRef="I_AccountOK" targetRef="I_ReplyAccountError" />
+    <sequenceFlow id="I_F14" sourceRef="I_ReplyAccountError" targetRef="I_EndAccount" />
+    <sequenceFlow id="I_F15" sourceRef="I_CheckDailyLimit" targetRef="I_LimitOK" />
+    <sequenceFlow id="I_F16" name="Sí" sourceRef="I_LimitOK" targetRef="I_CheckFunds" />
+    <sequenceFlow id="I_F17" name="No" sourceRef="I_LimitOK" targetRef="I_ReplyLimit" />
+    <sequenceFlow id="I_F18" sourceRef="I_ReplyLimit" targetRef="I_EndLimit" />
+    <sequenceFlow id="I_F19" sourceRef="I_CheckFunds" targetRef="I_FundsOK" />
+    <sequenceFlow id="I_F20" name="Sí" sourceRef="I_FundsOK" targetRef="I_ReserveFunds" />
+    <sequenceFlow id="I_F21" name="No" sourceRef="I_FundsOK" targetRef="I_ReplyNoFunds" />
+    <sequenceFlow id="I_F22" sourceRef="I_ReplyNoFunds" targetRef="I_EndFunds" />
+    <sequenceFlow id="I_F23" sourceRef="I_ReserveFunds" targetRef="I_ReserveOK" />
+    <sequenceFlow id="I_F24" name="Sí" sourceRef="I_ReserveOK" targetRef="I_CalcIssuerFee" />
+    <sequenceFlow id="I_F26" sourceRef="I_CalcIssuerFee" targetRef="I_Audit" />
+    <sequenceFlow id="I_F27" sourceRef="I_Audit" targetRef="I_SendApproval" />
+    <sequenceFlow id="I_F28" sourceRef="I_SendApproval" targetRef="I_EndApproved" />
+    <sequenceFlow id="I_F25" name="No" sourceRef="I_ReserveOK" targetRef="I_ReleaseReservation" />
+    <sequenceFlow id="I_F29" sourceRef="I_ReleaseReservation" targetRef="I_ReplySystemError" />
+    <sequenceFlow id="I_F30" sourceRef="I_ReplySystemError" targetRef="I_EndSystemError" />
+  </process>
+  <process id="Process_Ops" name="Operaciones – Conciliación y seguimiento" isExecutable="false">
+    <laneSet id="Process_Ops_LaneSet">
+      <lane id="Lane_Ops" name="Operaciones y conciliación">
+        <flowNodeRef>O_Start</flowNodeRef>
+        <flowNodeRef>O_LoadTransactions</flowNodeRef>
+        <flowNodeRef>O_Reconcile</flowNodeRef>
+        <flowNodeRef>O_ReconcileOK</flowNodeRef>
+        <flowNodeRef>O_CreateIncident</flowNodeRef>
+        <flowNodeRef>O_Review</flowNodeRef>
+        <flowNodeRef>O_Adjust</flowNodeRef>
+        <flowNodeRef>O_GenerateReport</flowNodeRef>
+        <flowNodeRef>O_End</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="O_Start" name="Evento de conciliación programada" />
+    <task id="O_LoadTransactions" name="Cargar transacciones y comisiones del periodo" />
+    <task id="O_Reconcile" name="Conciliar registros del ATM y del banco emisor" />
+    <exclusiveGateway id="O_ReconcileOK" name="¿Importes conciliados?" />
+    <task id="O_CreateIncident" name="Crear incidencia por diferencias y notificar operaciones" />
+    <task id="O_Review" name="Revisar trazas, respuesta bancaria y comprobantes" />
+    <task id="O_Adjust" name="Registrar ajuste autorizado y documentar resolución" />
+    <task id="O_GenerateReport" name="Generar reporte de transacciones, tiempos y comisiones" />
+    <endEvent id="O_End" name="Conciliación finalizada" />
+    <sequenceFlow id="O_F1" sourceRef="O_Start" targetRef="O_LoadTransactions" />
+    <sequenceFlow id="O_F2" sourceRef="O_LoadTransactions" targetRef="O_Reconcile" />
+    <sequenceFlow id="O_F3" sourceRef="O_Reconcile" targetRef="O_ReconcileOK" />
+    <sequenceFlow id="O_F4" name="sí" sourceRef="O_ReconcileOK" targetRef="O_GenerateReport" />
+    <sequenceFlow id="O_F5" name="no" sourceRef="O_ReconcileOK" targetRef="O_CreateIncident" />
+    <sequenceFlow id="O_F6" sourceRef="O_CreateIncident" targetRef="O_Review" />
+    <sequenceFlow id="O_F7" sourceRef="O_Review" targetRef="O_Adjust" />
+    <sequenceFlow id="O_F8" sourceRef="O_Adjust" targetRef="O_GenerateReport" />
+    <sequenceFlow id="O_F9" sourceRef="O_GenerateReport" targetRef="O_End" />
+  </process>
+  <message id="Msg_Request" name="Solicitud interbancaria" />
+  <message id="Msg_Response" name="Respuesta bancaria" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Multired_Ordered">
+    <bpmndi:BPMNPlane id="BPMNPlane_Multired_Ordered" bpmnElement="Collaboration_Multired">
+      <bpmndi:BPMNShape id="Participant_ATM_di" bpmnElement="Participant_ATM" isHorizontal="true">
+        <dc:Bounds x="160" y="55" width="4323" height="635" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_ATM_di" bpmnElement="Lane_ATM" isHorizontal="true">
+        <dc:Bounds x="215" y="55" width="4268" height="635" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_Start_di" bpmnElement="A_Start">
+        <dc:Bounds x="280" y="602" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="266" y="645" width="71" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ReadCard_di" bpmnElement="A_ReadCard">
+        <dc:Bounds x="374" y="589" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EncryptPIN_di" bpmnElement="A_EncryptPIN">
+        <dc:Bounds x="588" y="589" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_CheckCard_di" bpmnElement="A_CheckCard">
+        <dc:Bounds x="802" y="493" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_CardOK_di" bpmnElement="A_CardOK" isMarkerVisible="true">
+        <dc:Bounds x="1016" y="481" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1007" y="540" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_SelectOperation_di" bpmnElement="A_SelectOperation">
+        <dc:Bounds x="1126" y="476" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_OperationType_di" bpmnElement="A_OperationType" isMarkerVisible="true">
+        <dc:Bounds x="1340" y="472" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1342" y="531" width="55" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EnterAmount_di" bpmnElement="A_EnterAmount">
+        <dc:Bounds x="1450" y="517" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_CheckAmount_di" bpmnElement="A_CheckAmount">
+        <dc:Bounds x="1664" y="493" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_AmountOK_di" bpmnElement="A_AmountOK" isMarkerVisible="true">
+        <dc:Bounds x="1877" y="498" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1946" y="521" width="82" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ShowTimeout_di" bpmnElement="A_ShowTimeout">
+        <dc:Bounds x="2619" y="466" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndTimeout_di" bpmnElement="A_EndTimeout">
+        <dc:Bounds x="2893" y="585" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2883" y="628" width="64" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_Approved_di" bpmnElement="A_Approved" isMarkerVisible="true">
+        <dc:Bounds x="2671" y="349" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2667" y="408" width="67" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ShowPINError_di" bpmnElement="A_ShowPINError">
+        <dc:Bounds x="2833" y="483" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_PINAttempts_di" bpmnElement="A_PINAttempts" isMarkerVisible="true">
+        <dc:Bounds x="3099" y="573" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3085" y="632" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_BlockCard_di" bpmnElement="A_BlockCard">
+        <dc:Bounds x="3261" y="569" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndBlocked_di" bpmnElement="A_EndBlocked">
+        <dc:Bounds x="3535" y="581" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3514" y="624" width="85" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ShowNoFunds_di" bpmnElement="A_ShowNoFunds">
+        <dc:Bounds x="2833" y="87" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ShowLimit_di" bpmnElement="A_ShowLimit">
+        <dc:Bounds x="2833" y="188" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ShowIssuerError_di" bpmnElement="A_ShowIssuerError">
+        <dc:Bounds x="2833" y="290" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_DispenseCash_di" bpmnElement="A_DispenseCash">
+        <dc:Bounds x="3047" y="440" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ConfirmDispense_di" bpmnElement="A_ConfirmDispense">
+        <dc:Bounds x="3261" y="440" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_CalcCommission_di" bpmnElement="A_CalcCommission">
+        <dc:Bounds x="3475" y="440" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ShowBalance_di" bpmnElement="A_ShowBalance">
+        <dc:Bounds x="3047" y="339" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_PrintReceipt_di" bpmnElement="A_PrintReceipt">
+        <dc:Bounds x="3689" y="440" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_LogTransaction_di" bpmnElement="A_LogTransaction">
+        <dc:Bounds x="3903" y="440" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ReturnCard_di" bpmnElement="A_ReturnCard">
+        <dc:Bounds x="4117" y="440" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndSuccess_di" bpmnElement="A_EndSuccess">
+        <dc:Bounds x="4331" y="453" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="4319" y="496" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndBalance_di" bpmnElement="A_EndBalance">
+        <dc:Bounds x="3963" y="352" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3940" y="395" width="89" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_Cancel_di" bpmnElement="A_Cancel">
+        <dc:Bounds x="1450" y="416" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndCancel_di" bpmnElement="A_EndCancel">
+        <dc:Bounds x="1724" y="416" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1710" y="459" width="71" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_WaitResponse_di" bpmnElement="A_WaitResponse">
+        <dc:Bounds x="2525" y="369" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2503" y="331.5" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_Timeout_di" bpmnElement="A_Timeout">
+        <dc:Bounds x="2525" y="468" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2519" y="511" width="56" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ApprovedOp_di" bpmnElement="A_ApprovedOp" isMarkerVisible="true">
+        <dc:Bounds x="2885" y="391" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2874" y="450" width="82" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_PrintBalanceReceipt_di" bpmnElement="A_PrintBalanceReceipt">
+        <dc:Bounds x="3261" y="339" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_LogBalance_di" bpmnElement="A_LogBalance">
+        <dc:Bounds x="3475" y="339" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ReturnCardBalance_di" bpmnElement="A_ReturnCardBalance">
+        <dc:Bounds x="3689" y="339" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_LogDeclined_di" bpmnElement="A_LogDeclined">
+        <dc:Bounds x="3047" y="188" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ReturnCardDeclined_di" bpmnElement="A_ReturnCardDeclined">
+        <dc:Bounds x="3261" y="188" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndDeclined_di" bpmnElement="A_EndDeclined">
+        <dc:Bounds x="3535" y="201" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3514" y="244" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EjectCard_di" bpmnElement="A_EjectCard">
+        <dc:Bounds x="964" y="303" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_EndCardError_di" bpmnElement="A_EndCardError">
+        <dc:Bounds x="1198" y="315" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1176" y="358" width="88" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_AmountError_di" bpmnElement="A_AmountError">
+        <dc:Bounds x="1825" y="590" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_BuildRequest_di" bpmnElement="A_BuildRequest">
+        <dc:Bounds x="1825" y="290" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_SendRequest_di" bpmnElement="A_SendRequest">
+        <dc:Bounds x="2082" y="416" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A_ResponseRace_di" bpmnElement="A_ResponseRace">
+        <dc:Bounds x="2364" y="388" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2359" y="447" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="A_F1_di" bpmnElement="A_F1">
+        <di:waypoint x="323.1" y="623.6" />
+        <di:waypoint x="334.4" y="623.6" />
+        <di:waypoint x="349.3" y="623.6" />
+        <di:waypoint x="365" y="623.6" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F2_di" bpmnElement="A_F2">
+        <di:waypoint x="537.2" y="623.6" />
+        <di:waypoint x="550.9" y="623.6" />
+        <di:waypoint x="565.2" y="623.6" />
+        <di:waypoint x="579.1" y="623.6" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F3_di" bpmnElement="A_F3">
+        <di:waypoint x="745.6" y="589.2" />
+        <di:waypoint x="762.8" y="581.4" />
+        <di:waypoint x="781.2" y="573" />
+        <di:waypoint x="798.7" y="565" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F4_di" bpmnElement="A_F4">
+        <di:waypoint x="964.6" y="518.4" />
+        <di:waypoint x="980.5" y="516.7" />
+        <di:waypoint x="996.3" y="515" />
+        <di:waypoint x="1009.7" y="513.6" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F5_di" bpmnElement="A_F5">
+        <di:waypoint x="1074.5" y="509.9" />
+        <di:waypoint x="1086.6" y="509.9" />
+        <di:waypoint x="1101.6" y="509.9" />
+        <di:waypoint x="1117" y="509.9" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1088" y="485" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F6_di" bpmnElement="A_F6">
+        <di:waypoint x="1046" y="482" />
+        <di:waypoint x="1046" y="371" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1029" y="445" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F7_di" bpmnElement="A_F7">
+        <di:waypoint x="1127" y="337" />
+        <di:waypoint x="1163" y="337" />
+        <di:waypoint x="1163" y="336" />
+        <di:waypoint x="1198" y="336" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F8_di" bpmnElement="A_F8">
+        <di:waypoint x="1288.5" y="505.6" />
+        <di:waypoint x="1303.9" y="504.8" />
+        <di:waypoint x="1319.2" y="503.9" />
+        <di:waypoint x="1332.3" y="503.2" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F9_di" bpmnElement="A_F9">
+        <di:waypoint x="1391.7" y="508.1" />
+        <di:waypoint x="1404.8" y="512.2" />
+        <di:waypoint x="1422.6" y="517.8" />
+        <di:waypoint x="1441" y="523.6" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1399" y="490" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F10_di" bpmnElement="A_F10">
+        <di:waypoint x="1612.7" y="542.1" />
+        <di:waypoint x="1626.4" y="540.5" />
+        <di:waypoint x="1640.7" y="538.9" />
+        <di:waypoint x="1654.6" y="537.3" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F11_di" bpmnElement="A_F11">
+        <di:waypoint x="1826.2" y="527" />
+        <di:waypoint x="1841" y="527" />
+        <di:waypoint x="1855.7" y="527" />
+        <di:waypoint x="1868.4" y="527" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F12_di" bpmnElement="A_F12">
+        <di:waypoint x="1907" y="499" />
+        <di:waypoint x="1907" y="358" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1896" y="460" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F13_di" bpmnElement="A_F13">
+        <di:waypoint x="1907" y="557" />
+        <di:waypoint x="1907" y="590" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1916" y="560" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F14_di" bpmnElement="A_F14">
+        <di:waypoint x="1825" y="624" />
+        <di:waypoint x="1663.5" y="624" />
+        <di:waypoint x="1644.5" y="574.4" />
+        <di:waypoint x="1613" y="568" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1630" y="586" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F39_di" bpmnElement="A_F39">
+        <di:waypoint x="1370" y="473" />
+        <di:waypoint x="1370" y="325" />
+        <di:waypoint x="1825" y="325" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1307" y="392" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F41_di" bpmnElement="A_F41">
+        <di:waypoint x="1391.7" y="494.4" />
+        <di:waypoint x="1404.8" y="490.2" />
+        <di:waypoint x="1422.6" y="484.5" />
+        <di:waypoint x="1441" y="478.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1391" y="462" width="46" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F42_di" bpmnElement="A_F42">
+        <di:waypoint x="1612.7" y="445.3" />
+        <di:waypoint x="1648.4" y="443.3" />
+        <di:waypoint x="1688.2" y="441" />
+        <di:waypoint x="1714.4" y="439.5" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F15_di" bpmnElement="A_F15">
+        <di:waypoint x="1988" y="324" />
+        <di:waypoint x="2164.2" y="324" />
+        <di:waypoint x="2164" y="416" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F16_di" bpmnElement="A_F16">
+        <di:waypoint x="2245" y="450" />
+        <di:waypoint x="2305" y="450" />
+        <di:waypoint x="2305" y="417" />
+        <di:waypoint x="2365" y="417" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F17_di" bpmnElement="A_F17">
+        <di:waypoint x="2418" y="423" />
+        <di:waypoint x="2479.1" y="434" />
+        <di:waypoint x="2503.1" y="418.2" />
+        <di:waypoint x="2528" y="402" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2465" y="401" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F18_di" bpmnElement="A_F18">
+        <di:waypoint x="2413" y="428" />
+        <di:waypoint x="2481.7" y="468" />
+        <di:waypoint x="2501.5" y="474.6" />
+        <di:waypoint x="2526" y="483" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2452" y="446" width="81" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F19_di" bpmnElement="A_F19">
+        <di:waypoint x="2568" y="388.5" />
+        <di:waypoint x="2592.5" y="386.5" />
+        <di:waypoint x="2634.4" y="383.1" />
+        <di:waypoint x="2664.2" y="380.7" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F20_di" bpmnElement="A_F20">
+        <di:waypoint x="2568" y="490.6" />
+        <di:waypoint x="2579.3" y="491.4" />
+        <di:waypoint x="2594.4" y="492.5" />
+        <di:waypoint x="2610.2" y="493.6" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F21_di" bpmnElement="A_F21">
+        <di:waypoint x="2767.5" y="534.3" />
+        <di:waypoint x="2800.4" y="551.4" />
+        <di:waypoint x="2833.2" y="568.6" />
+        <di:waypoint x="2833.2" y="568.6" />
+        <di:waypoint x="2833.2" y="568.6" />
+        <di:waypoint x="2863.2" y="582.8" />
+        <di:waypoint x="2886.5" y="593.8" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F22_di" bpmnElement="A_F22">
+        <di:waypoint x="2725.3" y="382.6" />
+        <di:waypoint x="2763.2" y="390.3" />
+        <di:waypoint x="2838.2" y="405.5" />
+        <di:waypoint x="2881.1" y="414.1" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2777" y="373" width="48" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F23_di" bpmnElement="A_F23">
+        <di:waypoint x="2719" y="389.6" />
+        <di:waypoint x="2754.6" y="413.7" />
+        <di:waypoint x="2833.2" y="467.1" />
+        <di:waypoint x="2833.2" y="467.1" />
+        <di:waypoint x="2833.2" y="467.1" />
+        <di:waypoint x="2840.6" y="471.8" />
+        <di:waypoint x="2851" y="478.2" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2813" y="457" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F24_di" bpmnElement="A_F24">
+        <di:waypoint x="2996.3" y="549.8" />
+        <di:waypoint x="3032.5" y="564.5" />
+        <di:waypoint x="3072.9" y="580.8" />
+        <di:waypoint x="3099.1" y="591.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F25_di" bpmnElement="A_F25">
+        <di:waypoint x="3105.5" y="609.6" />
+        <di:waypoint x="3068.2" y="621.4" />
+        <di:waypoint x="2995.8" y="644.3" />
+        <di:waypoint x="2995.8" y="644.3" />
+        <di:waypoint x="2995.8" y="644.3" />
+        <di:waypoint x="2701.8" y="678.6" />
+        <di:waypoint x="2701.8" y="678.6" />
+        <di:waypoint x="1043.9" y="678.6" />
+        <di:waypoint x="1043.9" y="678.6" />
+        <di:waypoint x="1043.9" y="678.6" />
+        <di:waypoint x="1043.9" y="678.6" />
+        <di:waypoint x="869.5" y="652.9" />
+        <di:waypoint x="759.1" y="636.6" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2685" y="669" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F26_di" bpmnElement="A_F26">
+        <di:waypoint x="3158.1" y="602.8" />
+        <di:waypoint x="3182.2" y="602.8" />
+        <di:waypoint x="3218.1" y="602.8" />
+        <di:waypoint x="3251.8" y="602.8" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3173" y="578" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F27_di" bpmnElement="A_F27">
+        <di:waypoint x="3424.1" y="602.8" />
+        <di:waypoint x="3459.7" y="602.8" />
+        <di:waypoint x="3499.5" y="602.8" />
+        <di:waypoint x="3525.8" y="602.8" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F28_di" bpmnElement="A_F28">
+        <di:waypoint x="2712.8" y="360.6" />
+        <di:waypoint x="2744.4" y="311" />
+        <di:waypoint x="2833.2" y="171.3" />
+        <di:waypoint x="2833.2" y="171.3" />
+        <di:waypoint x="2833.2" y="171.3" />
+        <di:waypoint x="2840.6" y="166.7" />
+        <di:waypoint x="2851" y="160.2" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2818" y="161" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F29_di" bpmnElement="A_F29">
+        <di:waypoint x="2718" y="365" />
+        <di:waypoint x="2753.1" y="336.9" />
+        <di:waypoint x="2833.2" y="272.8" />
+        <di:waypoint x="2833.2" y="272.8" />
+        <di:waypoint x="2833.2" y="272.8" />
+        <di:waypoint x="2840.6" y="268.1" />
+        <di:waypoint x="2851" y="261.7" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2809" y="263" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F30_di" bpmnElement="A_F30">
+        <di:waypoint x="2724.5" y="372.1" />
+        <di:waypoint x="2748.4" y="366" />
+        <di:waypoint x="2787.8" y="356" />
+        <di:waypoint x="2824.3" y="346.7" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2724" y="336" width="89" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F31_di" bpmnElement="A_F31">
+        <di:waypoint x="2987.3" y="155.6" />
+        <di:waypoint x="3006.8" y="164.9" />
+        <di:waypoint x="3028" y="175.1" />
+        <di:waypoint x="3047.9" y="184.6" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F32_di" bpmnElement="A_F32">
+        <di:waypoint x="2996.3" y="222.7" />
+        <di:waypoint x="3010" y="222.7" />
+        <di:waypoint x="3024.3" y="222.7" />
+        <di:waypoint x="3038.3" y="222.7" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F33_di" bpmnElement="A_F33">
+        <di:waypoint x="2987.3" y="289.8" />
+        <di:waypoint x="3006.8" y="280.4" />
+        <di:waypoint x="3028" y="270.3" />
+        <di:waypoint x="3047.9" y="260.7" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F34_di" bpmnElement="A_F34">
+        <di:waypoint x="3210.1" y="222.7" />
+        <di:waypoint x="3223.9" y="222.7" />
+        <di:waypoint x="3238.2" y="222.7" />
+        <di:waypoint x="3252.1" y="222.7" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F35_di" bpmnElement="A_F35">
+        <di:waypoint x="3424.1" y="222.7" />
+        <di:waypoint x="3459.7" y="222.7" />
+        <di:waypoint x="3499.5" y="222.7" />
+        <di:waypoint x="3525.8" y="222.7" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F36_di" bpmnElement="A_F36">
+        <di:waypoint x="2938.4" y="426.4" />
+        <di:waypoint x="2962.3" y="432.5" />
+        <di:waypoint x="3001.7" y="442.5" />
+        <di:waypoint x="3038.3" y="451.8" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2967" y="413" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F37_di" bpmnElement="A_F37">
+        <di:waypoint x="3210.1" y="474.4" />
+        <di:waypoint x="3223.9" y="474.4" />
+        <di:waypoint x="3238.2" y="474.4" />
+        <di:waypoint x="3252.1" y="474.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F38_di" bpmnElement="A_F38">
+        <di:waypoint x="3424.1" y="474.4" />
+        <di:waypoint x="3437.8" y="474.4" />
+        <di:waypoint x="3452" y="474.4" />
+        <di:waypoint x="3466" y="474.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F43_di" bpmnElement="A_F43">
+        <di:waypoint x="3637.9" y="474.4" />
+        <di:waypoint x="3651.6" y="474.4" />
+        <di:waypoint x="3666" y="474.4" />
+        <di:waypoint x="3679.9" y="474.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F44_di" bpmnElement="A_F44">
+        <di:waypoint x="3851.8" y="474.4" />
+        <di:waypoint x="3865.6" y="474.4" />
+        <di:waypoint x="3879.9" y="474.4" />
+        <di:waypoint x="3893.8" y="474.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F45_di" bpmnElement="A_F45">
+        <di:waypoint x="4065.7" y="474.4" />
+        <di:waypoint x="4079.4" y="474.4" />
+        <di:waypoint x="4093.7" y="474.4" />
+        <di:waypoint x="4107.6" y="474.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F46_di" bpmnElement="A_F46">
+        <di:waypoint x="4279.2" y="474.4" />
+        <di:waypoint x="4294.5" y="474.4" />
+        <di:waypoint x="4309.3" y="474.4" />
+        <di:waypoint x="4321.6" y="474.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F47_di" bpmnElement="A_F47">
+        <di:waypoint x="2938.7" y="415.5" />
+        <di:waypoint x="2962.8" y="410.1" />
+        <di:waypoint x="3001.8" y="401.3" />
+        <di:waypoint x="3038.2" y="393.1" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2938" y="381" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F48_di" bpmnElement="A_F48">
+        <di:waypoint x="3210.1" y="373" />
+        <di:waypoint x="3223.9" y="373" />
+        <di:waypoint x="3238.2" y="373" />
+        <di:waypoint x="3252.1" y="373" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F49_di" bpmnElement="A_F49">
+        <di:waypoint x="3424.1" y="373" />
+        <di:waypoint x="3437.8" y="373" />
+        <di:waypoint x="3452" y="373" />
+        <di:waypoint x="3466" y="373" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F50_di" bpmnElement="A_F50">
+        <di:waypoint x="3637.9" y="373" />
+        <di:waypoint x="3651.6" y="373" />
+        <di:waypoint x="3666" y="373" />
+        <di:waypoint x="3679.9" y="373" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="A_F51_di" bpmnElement="A_F51">
+        <di:waypoint x="3851.8" y="373" />
+        <di:waypoint x="3887.6" y="373" />
+        <di:waypoint x="3927.3" y="373" />
+        <di:waypoint x="3953.6" y="373" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_Issuer_di" bpmnElement="Participant_Issuer" isHorizontal="true">
+        <dc:Bounds x="160" y="802" width="4323" height="484" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Issuer_di" bpmnElement="Lane_Issuer" isHorizontal="true">
+        <dc:Bounds x="215" y="802" width="4268" height="484" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_Start_di" bpmnElement="I_Start">
+        <dc:Bounds x="280" y="898" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="259" y="941" width="86" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReceiveRequest_di" bpmnElement="I_ReceiveRequest">
+        <dc:Bounds x="374" y="885" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ValidateMessage_di" bpmnElement="I_ValidateMessage">
+        <dc:Bounds x="588" y="885" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_MessageOK_di" bpmnElement="I_MessageOK" isMarkerVisible="true">
+        <dc:Bounds x="802" y="890" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="807" y="949" width="49" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReplyFormatError_di" bpmnElement="I_ReplyFormatError">
+        <dc:Bounds x="912" y="834" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndFormatError_di" bpmnElement="I_EndFormatError">
+        <dc:Bounds x="1134" y="846" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1130" y="889" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ValidatePIN_di" bpmnElement="I_ValidatePIN">
+        <dc:Bounds x="912" y="935" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_PINOK_di" bpmnElement="I_PINOK" isMarkerVisible="true">
+        <dc:Bounds x="1126" y="940" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1119" y="999" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReplyPINError_di" bpmnElement="I_ReplyPINError">
+        <dc:Bounds x="1236" y="884" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndPIN_di" bpmnElement="I_EndPIN">
+        <dc:Bounds x="1458" y="897" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1444" y="940" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ValidateAccount_di" bpmnElement="I_ValidateAccount">
+        <dc:Bounds x="1236" y="985" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_AccountOK_di" bpmnElement="I_AccountOK" isMarkerVisible="true">
+        <dc:Bounds x="1450" y="990" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1439" y="1049" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReplyAccountError_di" bpmnElement="I_ReplyAccountError">
+        <dc:Bounds x="1560" y="934" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndAccount_di" bpmnElement="I_EndAccount">
+        <dc:Bounds x="1782" y="947" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1762" y="990" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_CheckDailyLimit_di" bpmnElement="I_CheckDailyLimit">
+        <dc:Bounds x="1560" y="1035" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_LimitOK_di" bpmnElement="I_LimitOK" isMarkerVisible="true">
+        <dc:Bounds x="1774" y="1040" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1775" y="1099" width="58" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReplyLimit_di" bpmnElement="I_ReplyLimit">
+        <dc:Bounds x="1884" y="984" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndLimit_di" bpmnElement="I_EndLimit">
+        <dc:Bounds x="2105" y="997" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2088" y="1040" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_CheckFunds_di" bpmnElement="I_CheckFunds">
+        <dc:Bounds x="1884" y="1085" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_FundsOK_di" bpmnElement="I_FundsOK" isMarkerVisible="true">
+        <dc:Bounds x="2097" y="1090" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2097" y="1149" width="59" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReplyNoFunds_di" bpmnElement="I_ReplyNoFunds">
+        <dc:Bounds x="2207" y="1034" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndFunds_di" bpmnElement="I_EndFunds">
+        <dc:Bounds x="2429" y="1047" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2420" y="1090" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReserveFunds_di" bpmnElement="I_ReserveFunds">
+        <dc:Bounds x="2207" y="1135" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_CalcIssuerFee_di" bpmnElement="I_CalcIssuerFee">
+        <dc:Bounds x="2531" y="1084" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_Audit_di" bpmnElement="I_Audit">
+        <dc:Bounds x="2745" y="1084" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_SendApproval_di" bpmnElement="I_SendApproval">
+        <dc:Bounds x="2959" y="1084" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndApproved_di" bpmnElement="I_EndApproved">
+        <dc:Bounds x="3173" y="1097" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3165" y="1140" width="60" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReleaseReservation_di" bpmnElement="I_ReleaseReservation">
+        <dc:Bounds x="2531" y="1186" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReplySystemError_di" bpmnElement="I_ReplySystemError">
+        <dc:Bounds x="2745" y="1186" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_EndSystemError_di" bpmnElement="I_EndSystemError">
+        <dc:Bounds x="3019" y="1198" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3009" y="1241" width="63" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="I_ReserveOK_di" bpmnElement="I_ReserveOK" isMarkerVisible="true">
+        <dc:Bounds x="2421" y="1140" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2419" y="1199" width="64" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="I_F1_di" bpmnElement="I_F1">
+        <di:waypoint x="323.1" y="919.1" />
+        <di:waypoint x="334.4" y="919.1" />
+        <di:waypoint x="349.3" y="919.1" />
+        <di:waypoint x="365" y="919.1" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F2_di" bpmnElement="I_F2">
+        <di:waypoint x="537.2" y="919.1" />
+        <di:waypoint x="550.9" y="919.1" />
+        <di:waypoint x="565.2" y="919.1" />
+        <di:waypoint x="579.1" y="919.1" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F3_di" bpmnElement="I_F3">
+        <di:waypoint x="750.7" y="919.1" />
+        <di:waypoint x="765.5" y="919.1" />
+        <di:waypoint x="780.2" y="919.1" />
+        <di:waypoint x="792.8" y="919.1" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F4_di" bpmnElement="I_F4">
+        <di:waypoint x="854" y="925.9" />
+        <di:waypoint x="867.1" y="930" />
+        <di:waypoint x="884.8" y="935.6" />
+        <di:waypoint x="903.2" y="941.4" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="870" y="908" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F5_di" bpmnElement="I_F5">
+        <di:waypoint x="854" y="912.2" />
+        <di:waypoint x="867.1" y="908" />
+        <di:waypoint x="884.8" y="902.2" />
+        <di:waypoint x="903.2" y="896.3" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="869" y="880" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F6_di" bpmnElement="I_F6">
+        <di:waypoint x="1074.6" y="867.8" />
+        <di:waypoint x="1092.5" y="867.8" />
+        <di:waypoint x="1110.5" y="867.8" />
+        <di:waypoint x="1124.7" y="867.8" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F7_di" bpmnElement="I_F7">
+        <di:waypoint x="1074.6" y="969.2" />
+        <di:waypoint x="1089.3" y="969.2" />
+        <di:waypoint x="1104" y="969.2" />
+        <di:waypoint x="1116.7" y="969.2" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F8_di" bpmnElement="I_F8">
+        <di:waypoint x="1177.9" y="976" />
+        <di:waypoint x="1191" y="980.1" />
+        <di:waypoint x="1208.8" y="985.7" />
+        <di:waypoint x="1227.1" y="991.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1194" y="958" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F9_di" bpmnElement="I_F9">
+        <di:waypoint x="1177.9" y="962.3" />
+        <di:waypoint x="1191" y="958.1" />
+        <di:waypoint x="1208.8" y="952.4" />
+        <di:waypoint x="1227.1" y="946.4" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1193" y="930" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F10_di" bpmnElement="I_F10">
+        <di:waypoint x="1398.5" y="917.9" />
+        <di:waypoint x="1416.4" y="917.9" />
+        <di:waypoint x="1434.4" y="917.9" />
+        <di:waypoint x="1448.6" y="917.9" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F11_di" bpmnElement="I_F11">
+        <di:waypoint x="1398.5" y="1019.3" />
+        <di:waypoint x="1413.3" y="1019.3" />
+        <di:waypoint x="1428" y="1019.3" />
+        <di:waypoint x="1440.6" y="1019.3" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F12_di" bpmnElement="I_F12">
+        <di:waypoint x="1501.7" y="1026.1" />
+        <di:waypoint x="1514.8" y="1030.2" />
+        <di:waypoint x="1532.6" y="1035.8" />
+        <di:waypoint x="1551" y="1041.6" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1518" y="1008" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F13_di" bpmnElement="I_F13">
+        <di:waypoint x="1501.7" y="1012.4" />
+        <di:waypoint x="1514.8" y="1008.2" />
+        <di:waypoint x="1532.6" y="1002.5" />
+        <di:waypoint x="1551" y="996.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1516" y="980" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F14_di" bpmnElement="I_F14">
+        <di:waypoint x="1722.4" y="968" />
+        <di:waypoint x="1740.4" y="968" />
+        <di:waypoint x="1758.2" y="968" />
+        <di:waypoint x="1772.5" y="968" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F15_di" bpmnElement="I_F15">
+        <di:waypoint x="1722.4" y="1069.4" />
+        <di:waypoint x="1737.1" y="1069.4" />
+        <di:waypoint x="1751.8" y="1069.4" />
+        <di:waypoint x="1764.5" y="1069.4" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F16_di" bpmnElement="I_F16">
+        <di:waypoint x="1825.6" y="1076.2" />
+        <di:waypoint x="1838.7" y="1080.3" />
+        <di:waypoint x="1856.5" y="1085.9" />
+        <di:waypoint x="1874.9" y="1091.7" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1842" y="1058" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F17_di" bpmnElement="I_F17">
+        <di:waypoint x="1825.6" y="1062.5" />
+        <di:waypoint x="1838.7" y="1058.3" />
+        <di:waypoint x="1856.5" y="1052.6" />
+        <di:waypoint x="1874.9" y="1046.7" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1840" y="1030" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F18_di" bpmnElement="I_F18">
+        <di:waypoint x="2046.2" y="1018.1" />
+        <di:waypoint x="2064.2" y="1018.1" />
+        <di:waypoint x="2082.2" y="1018.1" />
+        <di:waypoint x="2096.4" y="1018.1" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F19_di" bpmnElement="I_F19">
+        <di:waypoint x="2046.2" y="1119.6" />
+        <di:waypoint x="2061" y="1119.6" />
+        <di:waypoint x="2075.7" y="1119.6" />
+        <di:waypoint x="2088.4" y="1119.6" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F20_di" bpmnElement="I_F20">
+        <di:waypoint x="2149.5" y="1126.3" />
+        <di:waypoint x="2162.7" y="1130.4" />
+        <di:waypoint x="2180.4" y="1136" />
+        <di:waypoint x="2198.8" y="1141.8" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2166" y="1108" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F21_di" bpmnElement="I_F21">
+        <di:waypoint x="2149.5" y="1112.6" />
+        <di:waypoint x="2162.7" y="1108.4" />
+        <di:waypoint x="2180.4" y="1102.7" />
+        <di:waypoint x="2198.8" y="1096.8" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2164" y="1081" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F22_di" bpmnElement="I_F22">
+        <di:waypoint x="2370.2" y="1068.2" />
+        <di:waypoint x="2388.1" y="1068.2" />
+        <di:waypoint x="2406" y="1068.2" />
+        <di:waypoint x="2420.2" y="1068.2" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F23_di" bpmnElement="I_F23">
+        <di:waypoint x="2370.2" y="1169.7" />
+        <di:waypoint x="2384.9" y="1169.7" />
+        <di:waypoint x="2399.6" y="1169.7" />
+        <di:waypoint x="2412.2" y="1169.7" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F24_di" bpmnElement="I_F24">
+        <di:waypoint x="2473.4" y="1162.7" />
+        <di:waypoint x="2486.5" y="1158.5" />
+        <di:waypoint x="2504.3" y="1152.8" />
+        <di:waypoint x="2522.7" y="1146.9" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2490" y="1131" width="12" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F25_di" bpmnElement="I_F25">
+        <di:waypoint x="2473.4" y="1176.4" />
+        <di:waypoint x="2486.5" y="1180.5" />
+        <di:waypoint x="2504.3" y="1186.1" />
+        <di:waypoint x="2522.7" y="1191.9" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2488" y="1158" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F26_di" bpmnElement="I_F26">
+        <di:waypoint x="2694.4" y="1118.3" />
+        <di:waypoint x="2708.1" y="1118.3" />
+        <di:waypoint x="2722.4" y="1118.3" />
+        <di:waypoint x="2736.3" y="1118.3" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F27_di" bpmnElement="I_F27">
+        <di:waypoint x="2908.3" y="1118.3" />
+        <di:waypoint x="2922" y="1118.3" />
+        <di:waypoint x="2936.3" y="1118.3" />
+        <di:waypoint x="2950.3" y="1118.3" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F28_di" bpmnElement="I_F28">
+        <di:waypoint x="3121.8" y="1118.3" />
+        <di:waypoint x="3137" y="1118.3" />
+        <di:waypoint x="3151.9" y="1118.3" />
+        <di:waypoint x="3164.2" y="1118.3" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F29_di" bpmnElement="I_F29">
+        <di:waypoint x="2694.4" y="1219.8" />
+        <di:waypoint x="2708.1" y="1219.8" />
+        <di:waypoint x="2722.4" y="1219.8" />
+        <di:waypoint x="2736.3" y="1219.8" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="I_F30_di" bpmnElement="I_F30">
+        <di:waypoint x="2908.3" y="1219.8" />
+        <di:waypoint x="2943.9" y="1219.8" />
+        <di:waypoint x="2983.7" y="1219.8" />
+        <di:waypoint x="3009.9" y="1219.8" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_Ops_di" bpmnElement="Participant_Ops" isHorizontal="true">
+        <dc:Bounds x="160" y="1377" width="4323" height="175" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Ops_di" bpmnElement="Lane_Ops" isHorizontal="true">
+        <dc:Bounds x="215" y="1377" width="4268" height="175" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_Start_di" bpmnElement="O_Start">
+        <dc:Bounds x="280" y="1465" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="272" y="1508" width="60" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_LoadTransactions_di" bpmnElement="O_LoadTransactions">
+        <dc:Bounds x="374" y="1452" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_Reconcile_di" bpmnElement="O_Reconcile">
+        <dc:Bounds x="588" y="1452" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_ReconcileOK_di" bpmnElement="O_ReconcileOK" isMarkerVisible="true">
+        <dc:Bounds x="802" y="1457" width="59" height="59" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="801" y="1516" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_CreateIncident_di" bpmnElement="O_CreateIncident">
+        <dc:Bounds x="912" y="1409" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_Review_di" bpmnElement="O_Review">
+        <dc:Bounds x="1126" y="1409" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_Adjust_di" bpmnElement="O_Adjust">
+        <dc:Bounds x="1340" y="1409" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_GenerateReport_di" bpmnElement="O_GenerateReport">
+        <dc:Bounds x="1554" y="1452" width="163" height="68" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="O_End_di" bpmnElement="O_End">
+        <dc:Bounds x="1768" y="1465" width="43" height="43" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1760" y="1508" width="60" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="O_F1_di" bpmnElement="O_F1">
+        <di:waypoint x="323.1" y="1486" />
+        <di:waypoint x="334.4" y="1486" />
+        <di:waypoint x="349.3" y="1486" />
+        <di:waypoint x="365" y="1486" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F2_di" bpmnElement="O_F2">
+        <di:waypoint x="537.2" y="1486" />
+        <di:waypoint x="550.9" y="1486" />
+        <di:waypoint x="565.2" y="1486" />
+        <di:waypoint x="579.1" y="1486" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F3_di" bpmnElement="O_F3">
+        <di:waypoint x="750.7" y="1486" />
+        <di:waypoint x="765.5" y="1486" />
+        <di:waypoint x="780.2" y="1486" />
+        <di:waypoint x="792.8" y="1486" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F4_di" bpmnElement="O_F4">
+        <di:waypoint x="858.5" y="1488.4" />
+        <di:waypoint x="881.6" y="1490.5" />
+        <di:waypoint x="911.9" y="1493.3" />
+        <di:waypoint x="911.9" y="1493.3" />
+        <di:waypoint x="911.9" y="1493.3" />
+        <di:waypoint x="1502.2" y="1493.3" />
+        <di:waypoint x="1502.2" y="1493.3" />
+        <di:waypoint x="1502.2" y="1493.3" />
+        <di:waypoint x="1521.2" y="1492.3" />
+        <di:waypoint x="1544.6" y="1491" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1202" y="1468" width="10" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F5_di" bpmnElement="O_F5">
+        <di:waypoint x="854.6" y="1480.1" />
+        <di:waypoint x="867.7" y="1476.5" />
+        <di:waypoint x="885.2" y="1471.9" />
+        <di:waypoint x="903.3" y="1467" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="870" y="1449" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F6_di" bpmnElement="O_F6">
+        <di:waypoint x="1074.9" y="1443.2" />
+        <di:waypoint x="1088.7" y="1443.2" />
+        <di:waypoint x="1103" y="1443.2" />
+        <di:waypoint x="1116.9" y="1443.2" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F7_di" bpmnElement="O_F7">
+        <di:waypoint x="1288.8" y="1443.2" />
+        <di:waypoint x="1302.6" y="1443.2" />
+        <di:waypoint x="1316.9" y="1443.2" />
+        <di:waypoint x="1330.8" y="1443.2" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F8_di" bpmnElement="O_F8">
+        <di:waypoint x="1502.7" y="1459.5" />
+        <di:waypoint x="1516.4" y="1462.3" />
+        <di:waypoint x="1530.7" y="1465.2" />
+        <di:waypoint x="1544.6" y="1468" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="O_F9_di" bpmnElement="O_F9">
+        <di:waypoint x="1716.2" y="1486" />
+        <di:waypoint x="1731.5" y="1486" />
+        <di:waypoint x="1746.3" y="1486" />
+        <di:waypoint x="1758.6" y="1486" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_Request_di" bpmnElement="MF_Request">
+        <di:waypoint x="2245" y="450" />
+        <di:waypoint x="2398.9" y="450" />
+        <di:waypoint x="2398.9" y="745.7" />
+        <di:waypoint x="339.1" y="745.7" />
+        <di:waypoint x="339.1" y="919.1" />
+        <di:waypoint x="374" y="919" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1337" y="721" width="65" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_Response_di" bpmnElement="MF_Response">
+        <di:waypoint x="3040.4" y="1084.1" />
+        <di:waypoint x="3040.4" y="714.6" />
+        <di:waypoint x="2546.6" y="714.6" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2759" y="690" width="69" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_PINError_di" bpmnElement="MF_PINError">
+        <di:waypoint x="1317.1" y="883.7" />
+        <di:waypoint x="1317.1" y="727" />
+        <di:waypoint x="2546.6" y="727" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1895" y="702" width="74" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_FundsError_di" bpmnElement="MF_FundsError">
+        <di:waypoint x="2288.7" y="1034" />
+        <di:waypoint x="2288.7" y="739.5" />
+        <di:waypoint x="2546.6" y="739.5" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2373" y="715" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_LimitError_di" bpmnElement="MF_LimitError">
+        <di:waypoint x="1964.8" y="983.9" />
+        <di:waypoint x="1964.8" y="751.9" />
+        <di:waypoint x="2546.6" y="751.9" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2214" y="727" width="83" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_AccountError_di" bpmnElement="MF_AccountError">
+        <di:waypoint x="1640.9" y="933.8" />
+        <di:waypoint x="1640.9" y="764.3" />
+        <di:waypoint x="2546.6" y="764.3" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2049" y="739" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_FormatError_di" bpmnElement="MF_FormatError">
+        <di:waypoint x="993.2" y="833.6" />
+        <di:waypoint x="993.2" y="776.7" />
+        <di:waypoint x="2546.6" y="776.7" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1730" y="752" width="81" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MF_SystemError_di" bpmnElement="MF_SystemError">
+        <di:waypoint x="2826.5" y="1185.6" />
+        <di:waypoint x="2826.5" y="789.1" />
+        <di:waypoint x="2546.6" y="789.1" />
+        <di:waypoint x="2546.6" y="411.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2647" y="764" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
